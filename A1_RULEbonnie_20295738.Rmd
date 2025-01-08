@@ -1,0 +1,96 @@
+---
+title: "Assignment 1 - Bonnie Rule"
+output: html_document
+date: "2025-01-08"
+---
+[GitHub Repository Link](https://github.com/rulbon24/BIOL432_Assignment1)
+
+# Overview
+This R Markdown document runs two R scripts, `dataGenerato.R` and `volumeEstimato.R`, in sequence to create and analyze a dataset of hypothetical limb measurements. After running the scripts, it loads the processed data for further analysis. To start, all necessary libraries will be loaded.
+
+```{r, include=FALSE}
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+```
+
+# Step 1: Load the revised measurements.csv
+The `dataGenerato.R` script creates a dataset of 100 observations with species names, limb measurements (width and length), and observer names. The dataset is exported as `measurements.csv`.
+
+```{r}
+source("dataGenerato.R")
+```
+
+The `volumeEstimato.R` script then reads the `measurements.csv` file, calculates limb volume based on limb width and length, and adds the volume as a new column in the dataset. The updated dataset is then saved back as `measurements.csv`.
+
+```{r}
+source("volumeEstimato.R")
+```
+
+# Step 2: Use dplyr to sort the data by species, then by observer, then by limb volume
+For this step, I start by loading the data using the head() function so that it is easier to sort by species, observer, and limb volume because I'll be able to see any errors before sorting.
+
+```{r}
+measurements <- read.csv("measurements.csv")
+head(measurements)
+```
+
+Then, using `dplyr`, the data is sorted by species, observer, and limb volume.
+
+```{r}
+sorted_data <- measurements %>%
+  arrange(Organism, Observer, Volume)
+head(sorted_data)
+```
+
+# Step 3: Create a table showing the average volume for each species
+A summary table is created to show the average volume for each species.
+
+```{r}
+average_volume <- measurements %>%
+  group_by(Organism) %>%
+  summarize(Average_Volume = mean(Volume, na.rm = TRUE))
+knitr::kable(average_volume, caption = "Average Limb Volume by Species")
+```
+
+# Step 4: Create a table showing the number of observations (i.e. rows) for each combination of species and observer.
+A summary table showing the number of observations for each species-observer combination is then created.
+
+```{r}
+observations_count <- measurements %>%
+  group_by(Organism, Observer) %>%
+  summarize(Count = n())
+knitr::kable(observations_count, caption = "Number of Observations by Species and Observer")
+```
+
+# Step 5: Create a single box plot (or similar) to compare key features of the distributions of volumes for each species.
+A box plot is then created to compare the distribution of volumes for each species.
+
+```{r}
+ggplot(measurements, aes(x = Organism, y = Volume, fill = Organism)) +
+  geom_boxplot() +
+  theme_minimal() +
+  labs(title = "Limb Volume Distribution by Species",
+       x = "Species",
+       y = "Limb Volume")
+```
+As per the boxplot, 
+
+
+# Step 6: Create a multi-panel plot showing frequency histograms showing the distribution of limb volume for each species.
+Frequency histograms are created for each species to show the distribution of limb volumes. However, I begin by changing the data from a wide to long format before plotting it.
+
+```{r}
+measurements_long <- measurements %>%
+  group_by(Organism) %>%
+  mutate(Volume_Group = Volume)
+
+ggplot(measurements, aes(x = Volume, fill = Organism)) +
+  geom_histogram(binwidth = 0.05, alpha = 0.7) +
+  facet_wrap(~Organism, scales = "free") +
+  scale_fill_brewer(palette = "Set1") + 
+  theme_minimal() +
+  labs(title = "Frequency Histograms of Limb Volume by Species",
+       x = "Limb Volume",
+       y = "Frequency")
+```
